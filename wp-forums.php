@@ -7,6 +7,7 @@ Version: 1.0.0
 Author: Aubrey Portwood
 Author URI: http://twitter.com/aubreypwd
 License: GPL2
+Topic: https://wordpress.org/support/topic/custom-taxonomies-widget
 */
 
 /*
