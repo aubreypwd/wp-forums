@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: wp-forums
+Plugin Name: wp-forums: Custom Taxonomies Widget
 Plugin URI: https://github.com/aubreypwd/wp-forums/
 Description:
 Version: 1.0.0
