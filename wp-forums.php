@@ -3,7 +3,7 @@
 Plugin Name: wp-forums
 Plugin URI: https://github.com/aubreypwd/wp-forums/
 Description:
-Version:
+Version: 1.0.0
 Author: Aubrey Portwood
 Author URI: http://twitter.com/aubreypwd
 License: GPL2
@@ -26,12 +26,19 @@ License: GPL2
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * Show 90 Day Terms
+ *
+ * @author  Aubrey Portwood
+ * @since 1.0.0
+ */
 class WP_Forums_aubreypwd_Ninety_Terms extends WP_Widget {
 
 	/**
 	 * Sets up the widgets name etc.
 	 *
 	 * @author Aubrey Portwood
+	 * @since 1.0.0
 	 */
 	public function __construct() {
 		$widget_ops = array(
@@ -46,6 +53,7 @@ class WP_Forums_aubreypwd_Ninety_Terms extends WP_Widget {
 	 * Outputs the content of the widget.
 	 *
 	 * @author Aubrey Portwood
+	 * @since 1.0.0
 	 *
 	 * @param array $args
 	 * @param array $instance
@@ -118,6 +126,7 @@ class WP_Forums_aubreypwd_Ninety_Terms extends WP_Widget {
 	 * Outputs the options form on admin.
 	 *
 	 * @author Aubrey Portwood
+	 * @since 1.0.0
 	 *
 	 * @param array $instance The widget options.
 	 */
@@ -129,6 +138,7 @@ class WP_Forums_aubreypwd_Ninety_Terms extends WP_Widget {
 	 * Processing widget options on save.
 	 *
 	 * @author Aubrey Portwood
+	 * @since 1.0.0
 	 *
 	 * @param array $new_instance The new options.
 	 * @param array $old_instance The previous options.
@@ -142,6 +152,7 @@ class WP_Forums_aubreypwd_Ninety_Terms extends WP_Widget {
  * Register the Widget.
  *
  * @author  Aubrey Portwood
+ * @since 1.0.0
  *
  * @return boolean True if we register the widget, false if not.
  */
