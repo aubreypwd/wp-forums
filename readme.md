@@ -18,6 +18,3 @@ Each forum topic has it's own [matching branch](https://github.com/aubreypwd/wp-
 `https://wordpress.org/support/topic/help-me` has a solution on
 the `topic/help-me` branch.
 
-* [Change the Add Media button to say Add Gallery](https://github.com/aubreypwd/wp-forums/tree/topic/always-using-gallery-instead-of-single-media)
-* [How to allow registration with special character in username](https://github.com/aubreypwd/wp-forums/tree/topic/username-with-quote-cant-login)
-* [How to display active categories in past 90 days](https://github.com/aubreypwd/wp-forums/tree/topic/custom-taxonomies-widget)
