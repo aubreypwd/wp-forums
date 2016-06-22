@@ -26,3 +26,43 @@ Topic URI: https://wordpress.org/support/topic/delete_theme-example?replies=3
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+
+/**
+ * Will delete themes except the one's specified.
+ *
+ * Note with this implementation, everytime the
+ * Dashboard is accessed it deletes all the themes
+ * except the ones specified.
+ *
+ * @author  Aubrey Portwood
+ * @since   1.0.0
+ */
+function wp_forums_aubreypwd_delete_themes() {
+
+	// The current themes.
+	$themes = wp_get_themes();
+
+	// The themes we want to keep (delete the others).
+	$themes_to_keep = array(
+
+		// Replace this with the theme(s) you created or don't want deleted.
+		'twentyeleven', // Going to leave at least one active.
+		'another-theme',
+	);
+
+	// Loop through installed themes.
+	foreach ( $themes as $theme ) {
+
+		// This is the name of the theme.
+		$name = $theme->get_template();
+
+		// If it's not one we want to keep...
+		if ( ! in_array( $name, $themes_to_keep ) ) {
+			$stylesheet = $theme->get_stylesheet();
+
+			// Delete the theme.
+			delete_theme( $stylesheet, false );
+		}
+	}
+}
+add_action( 'admin_init', 'wp_forums_aubreypwd_delete_themes' );
