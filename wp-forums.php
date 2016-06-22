@@ -1,13 +1,13 @@
 <?php
 /*
-Plugin Name: wp-forums
+Plugin Name: wp-forums: delete_theme example?
 Plugin URI: https://github.com/aubreypwd/wp-forums/
 Description:
-Version:
+Version: 1.0.0
 Author: Aubrey Portwood
 Author URI: http://twitter.com/aubreypwd
 License: GPL2
-Topic URI:
+Topic URI: https://wordpress.org/support/topic/delete_theme-example?replies=3
 */
 
 /*
