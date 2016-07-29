@@ -27,171 +27,182 @@ Topic URI:
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-function wp_forums_get_freshness_count( $freshness ) {
-	$freshness = explode( ' ',  $freshness );
+class WP_Forums_Forum_Data {
 
-	if ( isset( $freshness[0] ) && isset( $freshness[1] ) && ! empty( $freshness[0] ) && ! empty( $freshness[1] ) ) {
-		return array(
-			'frame'     => $freshness[1],
-			'count'     => $freshness[0],
+	function __construct() {
+		add_action( 'init', array( $this, 'wp_forums_forum_data' ) );
+	}
+
+	private function freshness_count( $freshness ) {
+		$freshness = explode( ' ',  $freshness );
+
+		if ( isset( $freshness[0] ) && isset( $freshness[1] ) && ! empty( $freshness[0] ) && ! empty( $freshness[1] ) ) {
+			return array(
+				'frame'     => $freshness[1],
+				'count'     => $freshness[0],
+			);
+		}
+
+		return false;
+	}
+
+	public function wp_forums_forum_data() {
+		if ( ! isset( $_GET['forums'] ) ) {
+			return;
+		}
+
+		// Simple DOM :D
+		require_once( 'simple_html_dom.php' );
+
+		// Max posts (e.g. 30 posts is not interesting).
+		$max_posts = 2;
+
+		// Freshness filters.
+		$max_freshness = array(
+
+			// Singular.
+			'second'  => 1,
+			'minute'  => 1,
+			'hour'    => 1,
+			'day'     => 1,
+			'week'    => 0,
+			'month'   => 0,
+			'year'    => 0,
+
+			// Plural.
+			'seconds' => 60,
+			'minutes' => 60,
+			'hours'   => 24,
+			'days'    => 2,
+			'weeks'   => 0,
+			'months'  => 0,
+			'years'   => 0,
 		);
-	}
 
-	return false;
-}
+		// Go in this many paged pages.
+		$paged = 2;
 
-function wp_forums_forum_data() {
-	if ( ! isset( $_GET['forums'] ) ) {
-		return;
-	}
+		// Get resolved or not.
+		$resolved_filter = false;
 
-	require_once( 'simple_html_dom.php' );
+		// Paged pages, and first page.
+		$single_tags_url = "http://wordpress.org/tags/%s";
+		$paged_tags_url  = "http://wordpress.org/tags/%s/page/%s";
 
-	$single_tags_url = "http://wordpress.org/tags/%s";
-	$paged_tags_url  = "http://wordpress.org/tags/%s/page/%s";
+		// These Forum tags.
+		$tags = array(
+			'code',
+			'php',
+			'coding',
+			'code',
+			'jquery',
+			'javascript',
+			'js',
+			'plugin',
+			'plugins',
+			'aubreypwd',
+		);
 
-	// These Forum tags.
-	$tags = array(
-		'code',
-		'php',
-		'coding',
-		'code',
-		'jquery',
-		'javascript',
-		'js',
-		'plugin',
-		'plugins',
-		'aubreypwd',
-	);
+		// Each tag.
+		foreach ( $tags as $tag ) {
 
-	// Go in this many paged pages.
-	$paged = 2;
+			// Each page.
+			for ( $page = 1; $page <= $paged; $page++ ) {
 
-	// Each tag.
-	foreach ( $tags as $tag ) {
+				if ( 0 == $page ) {
+					$tag_url = sprintf( $single_tags_url, $tag );
+				} else {
+					$tag_url = sprintf( $paged_tags_url, $tag, $page );
+				}
 
-		// Each page.
-		for ( $page = 1; $page <= $paged; $page++ ) {
+				// Transient.
+				$cache_key = sanitize_title_with_dashes( $tag_url );
 
-			if ( 0 == $page ) {
-				$tag_url = sprintf( $single_tags_url, $tag );
-			} else {
-				$tag_url = sprintf( $paged_tags_url, $tag, $page );
-			}
+				// Cache value exists.
+				if ( $cache = get_transient( $cache_key ) ) {
 
-			// Transient.
-			$cache_key = sanitize_title_with_dashes( $tag_url );
+					// Use cache.
+					$html_src = $cache;
 
-			// Cache value exists.
-			if ( $cache = get_transient( $cache_key ) ) {
+				// Cache does not exist.
+				} else {
 
-				// Use cache.
-				$html_src = $cache;
+					// Use new value.
+					$html_src = file_get_contents( $tag_url );
 
-			// Cache does not exist.
-			} else {
+					// Cache the value for next time.
+					set_transient( $cache_key, $html_src, 30 );
+				}
 
-				// Use new value.
-				$html_src = file_get_contents( $tag_url );
+				$html = str_get_html( $html_src );
+				$trs = $html->find( '.wrapper table.widefat tbody tr' );
 
-				// Cache the value for next time.
-				set_transient( $cache_key, $html_src, 30 );
-			}
+				foreach ( $trs as $row ) {
+					$fullname = ( $fullname = $row->find( 'td', 0 ) ) ? $fullname->plaintext : false;
 
-			$html = str_get_html( $html_src );
-			$trs = $html->find( '.wrapper table.widefat tbody tr' );
+					$record = array(
+						'resolved'  => (boolean) stristr( $fullname, '[Resolved]' ),
+						'tag'       => $tag,
+						'paged_url' => $tag_url,
+						'name'      => strip_tags( $fullname ),
+						'url'       => ( $link = $row->find( 'td a', 0 ) )    ? $link->href                                            : false,
+						'posts'     => ( $posts = $row->find( 'td', 1 )   )   ? $posts->plaintext                                      : false,
+						'freshness' => ( $freshness = $row->find( 'td', 3 ) ) ? $this->freshness_count( $freshness->plaintext ) : false,
+					);
 
-			foreach ( $trs as $row ) {
-				$fullname = ( $fullname = $row->find( 'td', 0 ) ) ? $fullname->plaintext : false;
 
-				$record = array(
-					'resolved'  => (boolean) stristr( $fullname, '[Resolved]' ),
-					'tag'       => $tag,
-					'paged_url' => $tag_url,
-					'name'      => strip_tags( $fullname ),
-					'url'       => ( $link = $row->find( 'td a', 0 ) )    ? $link->href                                            : false,
-					'posts'     => ( $posts = $row->find( 'td', 1 )   )   ? $posts->plaintext                                      : false,
-					'freshness' => ( $freshness = $row->find( 'td', 3 ) ) ? wp_forums_get_freshness_count( $freshness->plaintext ) : false,
-				);
+					// Does the filter match?
+					$filter_match = (bool) $resolved_filter == (bool) $record['resolved'];
 
-				// Get resolved or not.
-				$resolved_filter = false;
+					// If filter is set to all, always add the record, otherwise test if the records resolved == the chosen filter.
+					$show = ( 'all' === $resolved_filter ) ? true : $filter_match;
 
-				// Does the filter match?
-				$filter_match = (bool) $resolved_filter == (bool) $record['resolved'];
+					// Name at least, common!
+					if ( isset( $record['name'] ) && ! empty( $record['name'] ) && $show ) {
 
-				// If filter is set to all, always add the record, otherwise test if the records resolved == the chosen filter.
-				$show = ( 'all' === $resolved_filter ) ? true : $filter_match;
+						// Set the record.
+						$record_id = sanitize_title_with_dashes( $record['name'] );
+						$forum[ $page ][ $record_id ] = $record;
 
-				// Name at least, common!
-				if ( isset( $record['name'] ) && ! empty( $record['name'] ) && $show ) {
+						// Require these.
+						$req_keys = array( 'freshness', 'posts', 'url', 'name', );
 
-					// Set the record.
-					$record_id = sanitize_title_with_dashes( $record['name'] );
-					$forum[ $page ][ $record_id ] = $record;
+						// If required key is not met.
+						foreach ( $req_keys as $key ) {
+							if ( ! isset( $record[ $key ] ) || ! $record[ $key ] ) {
 
-					// Require these.
-					$req_keys = array( 'freshness', 'posts', 'url', 'name', );
-
-					// If required key is not met.
-					foreach ( $req_keys as $key ) {
-						if ( ! isset( $record[ $key ] ) || ! $record[ $key ] ) {
-
-							// Remove the record.
-							unset( $record[ $page ][ $record_id ] );
+								// Remove the record.
+								unset( $record[ $page ][ $record_id ] );
+							}
 						}
-					}
 
-				} // name set
+					} // name set
+				}
+			}
+		} // foreach
+
+		if ( ! $forum ) {
+			return array();
+		}
+
+		foreach ( $forum as $page_key => $page ) {
+			foreach ( $page as $post_key => $post ) {
+				if ( isset( $post['posts'] ) && $post['posts'] && $post['posts'] > $max_posts ) {
+					unset( $forum[ $page_key ][ $post_key ] );
+				}
 			}
 		}
-	} // foreach
 
-	if ( ! $forum ) {
-		return array();
-	}
-
-	// Max posts (e.g. 30 posts is not interesting).
-	$max_posts = 2;
-
-	foreach ( $forum as $page_key => $page ) {
-		foreach ( $page as $post_key => $post ) {
-			if ( isset( $post['posts'] ) && $post['posts'] && $post['posts'] > $max_posts ) {
-				unset( $forum[ $page_key ][ $post_key ] );
+		foreach ( $forum as $page_key => $page ) {
+			foreach ( $page as $post_key => $post ) {
+				if ( isset( $max_freshness[ $post['freshness']['frame'] ] ) && $post['freshness']['count'] > $max_freshness[ $post['freshness']['frame'] ] ) {
+					unset( $forum[ $page_key ][ $post_key ] );
+				}
 			}
 		}
+
+		error_log( print_r( $forum, true ) );
 	}
-
-	// Freshness filters.
-	$max_freshness = array(
-
-		// Singular.
-		'second'  => 1,
-		'minute'  => 1,
-		'hour'    => 1,
-		'day'     => 1,
-		'week'    => 0,
-		'month'   => 0,
-		'year'    => 0,
-
-		// Plural.
-		'seconds' => 60,
-		'minutes' => 60,
-		'hours'   => 24,
-		'days'    => 2,
-		'weeks'   => 0,
-		'months'  => 0,
-		'years'   => 0,
-	);
-
-	foreach ( $forum as $page_key => $page ) {
-		foreach ( $page as $post_key => $post ) {
-			if ( isset( $max_freshness[ $post['freshness']['frame'] ] ) && $post['freshness']['count'] > $max_freshness[ $post['freshness']['frame'] ] ) {
-				unset( $forum[ $page_key ][ $post_key ] );
-			}
-		}
-	}
-
-	error_log( print_r( $forum, true ) );
 }
-add_action( 'init', 'wp_forums_forum_data' );
+
+new WP_Forums_Forum_Data();
