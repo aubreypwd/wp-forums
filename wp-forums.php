@@ -41,6 +41,10 @@ function wp_forums_get_freshness_count( $freshness ) {
 }
 
 function wp_forums_forum_data() {
+	if ( ! isset( $_GET['forums'] ) ) {
+		return;
+	}
+
 	require_once( 'simple_html_dom.php' );
 
 	$single_tags_url = "http://wordpress.org/tags/%s";
