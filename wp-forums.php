@@ -30,6 +30,10 @@ Topic URI:
 class WP_Forums_Forum_Data {
 
 	function __construct() {
+		if ( ! isset( $_GET['forums'] ) ) {
+			return;
+		}
+
 		add_action( 'init', array( $this, 'wp_forums_forum_data' ) );
 	}
 
@@ -47,9 +51,6 @@ class WP_Forums_Forum_Data {
 	}
 
 	public function wp_forums_forum_data() {
-		if ( ! isset( $_GET['forums'] ) ) {
-			return;
-		}
 
 		// Simple DOM :D
 		require_once( 'simple_html_dom.php' );
