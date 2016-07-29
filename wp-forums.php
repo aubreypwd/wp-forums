@@ -29,37 +29,21 @@ Topic URI:
 
 class WP_Forums_Forum_Data {
 
+	public $max_posts;
+	public $max_freshness;
+	public $paged;
+	public $resolved_filter;
+
 	function __construct() {
 		if ( ! isset( $_GET['forums'] ) ) {
 			return;
 		}
 
-		add_action( 'init', array( $this, 'wp_forums_forum_data' ) );
-	}
-
-	private function freshness_count( $freshness ) {
-		$freshness = explode( ' ',  $freshness );
-
-		if ( isset( $freshness[0] ) && isset( $freshness[1] ) && ! empty( $freshness[0] ) && ! empty( $freshness[1] ) ) {
-			return array(
-				'frame'     => $freshness[1],
-				'count'     => $freshness[0],
-			);
-		}
-
-		return false;
-	}
-
-	public function wp_forums_forum_data() {
-
-		// Simple DOM :D
-		require_once( 'simple_html_dom.php' );
-
 		// Max posts (e.g. 30 posts is not interesting).
-		$max_posts = 2;
+		$this->max_posts = 2;
 
 		// Freshness filters.
-		$max_freshness = array(
+		$this->max_freshness = array(
 
 			// Singular.
 			'second'  => 1,
@@ -81,10 +65,32 @@ class WP_Forums_Forum_Data {
 		);
 
 		// Go in this many paged pages.
-		$paged = 2;
+		$this->paged = 2;
 
 		// Get resolved or not.
-		$resolved_filter = false;
+		$this->resolved_filter = false;
+
+		// Show the data.
+		add_action( 'init', array( $this, 'get_data' ) );
+	}
+
+	private function freshness_count( $freshness ) {
+		$freshness = explode( ' ',  $freshness );
+
+		if ( isset( $freshness[0] ) && isset( $freshness[1] ) && ! empty( $freshness[0] ) && ! empty( $freshness[1] ) ) {
+			return array(
+				'frame'     => $freshness[1],
+				'count'     => $freshness[0],
+			);
+		}
+
+		return false;
+	}
+
+	public function get_data() {
+
+		// Simple DOM :D
+		require_once( 'simple_html_dom.php' );
 
 		// Paged pages, and first page.
 		$single_tags_url = "http://wordpress.org/tags/%s";
@@ -108,7 +114,7 @@ class WP_Forums_Forum_Data {
 		foreach ( $tags as $tag ) {
 
 			// Each page.
-			for ( $page = 1; $page <= $paged; $page++ ) {
+			for ( $page = 1; $page <= $this->paged; $page++ ) {
 
 				if ( 0 == $page ) {
 					$tag_url = sprintf( $single_tags_url, $tag );
@@ -153,10 +159,10 @@ class WP_Forums_Forum_Data {
 
 
 					// Does the filter match?
-					$filter_match = (bool) $resolved_filter == (bool) $record['resolved'];
+					$filter_match = (bool) $this->resolved_filter == (bool) $record['resolved'];
 
 					// If filter is set to all, always add the record, otherwise test if the records resolved == the chosen filter.
-					$show = ( 'all' === $resolved_filter ) ? true : $filter_match;
+					$show = ( 'all' === $this->resolved_filter ) ? true : $filter_match;
 
 					// Name at least, common!
 					if ( isset( $record['name'] ) && ! empty( $record['name'] ) && $show ) {
@@ -188,7 +194,7 @@ class WP_Forums_Forum_Data {
 
 		foreach ( $forum as $page_key => $page ) {
 			foreach ( $page as $post_key => $post ) {
-				if ( isset( $post['posts'] ) && $post['posts'] && $post['posts'] > $max_posts ) {
+				if ( isset( $post['posts'] ) && $post['posts'] && $post['posts'] > $this->max_posts ) {
 					unset( $forum[ $page_key ][ $post_key ] );
 				}
 			}
@@ -196,7 +202,7 @@ class WP_Forums_Forum_Data {
 
 		foreach ( $forum as $page_key => $page ) {
 			foreach ( $page as $post_key => $post ) {
-				if ( isset( $max_freshness[ $post['freshness']['frame'] ] ) && $post['freshness']['count'] > $max_freshness[ $post['freshness']['frame'] ] ) {
+				if ( isset( $this->max_freshness[ $post['freshness']['frame'] ] ) && $post['freshness']['count'] > $this->max_freshness[ $post['freshness']['frame'] ] ) {
 					unset( $forum[ $page_key ][ $post_key ] );
 				}
 			}
