@@ -79,7 +79,26 @@ function wp_forums_forum_data() {
 				$tag_url = sprintf( $paged_tags_url, $tag, $page );
 			}
 
-			$html = file_get_html( $tag_url );
+			// Transient.
+			$cache_key = sanitize_title_with_dashes( $tag_url );
+
+			// Cache value exists.
+			if ( $cache = get_transient( $cache_key ) ) {
+
+				// Use cache.
+				$html_src = $cache;
+
+			// Cache does not exist.
+			} else {
+
+				// Use new value.
+				$html_src = file_get_contents( $tag_url );
+
+				// Cache the value for next time.
+				set_transient( $cache_key, $html_src, 30 );
+			}
+
+			$html = str_get_html( $html_src );
 			$trs = $html->find( '.wrapper table.widefat tbody tr' );
 
 			foreach ( $trs as $row ) {
